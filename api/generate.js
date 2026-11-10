@@ -1,4 +1,11 @@
-const MODELS = [process.env.GEMINI_MODEL, "gemini-3.7-flash", "gemini-flash-latest", "gemini-2.5-flash"].filter(Boolean);
+// Vercel serverless function: keeps your Gemini key on the server.
+// Env vars (Vercel > Settings > Environment Variables):
+//   GEMINI_API_KEY  (required)
+//   GEMINI_MODEL    (optional, defaults to gemini-4-argon)
+
+const PRIMARY = process.env.GEMINI_MODEL || "gemini-4-argon";
+// Tried in order. If the first is busy or unavailable, the next one is used.
+const MODELS = [...new Set([PRIMARY, "gemini-3.8-flash"])];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SCHEMA = {
@@ -40,34 +47,49 @@ module.exports = async (req, res) => {
   if (typeof idea !== "string" || idea.trim().length < 8 || idea.length > 800)
     return res.status(400).json({ error: "Idea must be 8 to 800 characters" });
 
-  const body = JSON.stringify({
-    systemInstruction: { parts: [{ text: SYSTEM }] },
-    contents: [{ role: "user", parts: [{ text:
-      `Idea: ${idea.trim()}\nPlatform: ${String(platform || "Instagram").slice(0, 20)}\nTone: ${String(tone || "Friendly").slice(0, 40)}` }] }],
-    generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.8 },
-  });
+  const prompt = `Idea: ${idea.trim()}\nPlatform: ${String(platform || "Instagram").slice(0, 20)}\nTone: ${String(tone || "Friendly").slice(0, 40)}`;
+
+  const bodyFor = (model) => {
+    const generationConfig = {
+      responseMimeType: "application/json",
+      responseSchema: SCHEMA,
+      maxOutputTokens: 8192,
+    };
+    // Gemini 4 Argon: low thinking = fast. (It ignores temperature, so none is set.)
+    if (model.startsWith("gemini-4")) generationConfig.thinkingConfig = { thinkingLevel: "low" };
+    return JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig,
+    });
+  };
 
   const t0 = Date.now();
   let lastError = "Gemini is busy";
   for (const model of MODELS) {
     for (let attempt = 0; attempt < 2; attempt++) {
-      if (Date.now() - t0 > 38000) break;
+      if (Date.now() - t0 > 40000) break; // stay under the function time limit
       try {
         const r = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body, signal: AbortSignal.timeout(18000) }
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+            body: bodyFor(model),
+            signal: AbortSignal.timeout(25000),
+          }
         );
         const data = await r.json();
         if (r.ok) {
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const text = data.candidates?.[0]?.content?.parts?.find((p) => p.text && !p.thought)?.text;
           if (text) return res.status(200).json(JSON.parse(text));
-          lastError = "Empty response";
+          lastError = `${model}: empty response`;
           break;
         }
         lastError = `${model}: ${data.error?.message || r.status}`;
         console.error("Gemini error", r.status, lastError);
-        if (r.status === 429 || r.status >= 500) { await sleep(900); continue; }
-        break;
+        if (r.status === 429 || r.status >= 500) { await sleep(800); continue; } // busy: retry once
+        break; // bad model, key or billing: try the next model
       } catch (e) {
         lastError = `${model}: ${e.message}`;
         console.error("Request failed", lastError);
