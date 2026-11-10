@@ -1,6 +1,6 @@
 // Vercel serverless function: keeps your Gemini key on the server.
 // Set GEMINI_API_KEY in Vercel > Project > Settings > Environment Variables.
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
 const SCHEMA = {
   type: "OBJECT",
