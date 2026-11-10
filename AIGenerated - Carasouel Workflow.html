@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carousel Studio – AI content pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{--bg:#eef1f5;--surf:#fff;--ink:#101828;--mut:#5f6b7c;--line:#dde3ec;--acc:#ff7a00;--pine:#0f5c4d;--ok:#16a34a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0c1118;--surf:#151c27;--ink:#eef2f8;--mut:#98a4b8;--line:#263144;--pine:#3ec9a7}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0c1118;--surf:#151c27;--ink:#eef2f8;--mut:#98a4b8;--line:#263144;--pine:#3ec9a7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 "DM Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0;line-height:1.1;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.w{max-width:1200px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:14px;height:62px}
+.logo{font:800 20px "Bricolage Grotesque";margin-right:auto;display:flex;gap:8px;align-items:center}
+.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--acc),#ffcf33);display:grid;place-items:center;font-style:normal;font-size:14px}
+.tabs{display:flex;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:4px}
+.tabs button{border:0;background:none;padding:8px 18px;border-radius:9px;font-weight:700;cursor:pointer;color:var(--mut)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;background:var(--ink);color:var(--bg);transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px -12px var(--acc)}
+.btn.a{background:var(--acc);color:#2a1400}.btn.g{background:transparent;color:var(--ink);border:1.5px solid var(--line)}.btn.sm{padding:8px 12px;font-size:13px}
+.pn{display:none}.pn.on{display:block;animation:in .4s}@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.ws{display:grid;grid-template-columns:320px minmax(0,1fr) 300px;gap:18px;padding:22px 0 50px;align-items:start}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:18px}
+.card h3{font-size:18px;margin-bottom:10px}
+label.f{display:block;font-size:12.5px;font-weight:700;color:var(--mut);margin:12px 0 6px}
+textarea,select,input[type=text]{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px}
+textarea{resize:vertical;min-height:110px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1.5px solid var(--line);background:none;border-radius:99px;padding:6px 13px;cursor:pointer;font-weight:600;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sw{display:flex;gap:8px}.sw button{width:34px;height:34px;border-radius:50%;border:3px solid var(--surf);box-shadow:0 0 0 1.5px var(--line);cursor:pointer;transition:transform .2s}
+.sw button[aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--ink);transform:scale(1.12)}
+.pl{list-style:none;margin:14px 0 0;padding:0}
+.pl li{display:flex;gap:10px;align-items:center;padding:6px 0;color:var(--mut);font-size:14px}
+.pl li i{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;transition:.3s}
+.pl li.run{color:var(--ink)}.pl li.run i{border-color:var(--acc);border-top-color:transparent;animation:sp .7s linear infinite}
+.pl li.done{color:var(--ink)}.pl li.done i{background:var(--ok);border-color:var(--ok);color:#fff}
+@keyframes sp{to{transform:rotate(360deg)}}
+.cv{background:var(--surf);border:1px solid var(--line);border-radius:24px;padding:18px}
+.st{container-type:inline-size;max-width:440px;margin:0 auto}
+.sl{width:100%;aspect-ratio:4/5;border-radius:6cqw;padding:8cqw;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;background:var(--sb);color:var(--sx);animation:in .45s}
+.sl.sq{aspect-ratio:1/1}
+.sl:before{content:"";position:absolute;width:70cqw;height:70cqw;border-radius:50%;background:var(--sa);opacity:.18;right:-22cqw;top:-18cqw}
+.sl:after{content:"🐾";position:absolute;right:7cqw;bottom:6cqw;font-size:11cqw;opacity:.25;transform:rotate(18deg)}
+.sl>*{position:relative;z-index:1}
+.tp{display:flex;justify-content:space-between;font-weight:700;font-size:3.4cqw}
+.tp b{background:var(--sa);color:var(--sb);padding:1.2cqw 3cqw;border-radius:9cqw}
+.nm{font:800 22cqw/0.9 "Bricolage Grotesque";color:var(--sa);margin-bottom:2cqw}
+.sl [contenteditable]{outline:0;border-radius:2cqw;transition:background .2s}
+.sl [contenteditable]:hover,.sl [contenteditable]:focus{background:rgba(127,127,127,.18)}
+.hd{font:800 9.4cqw/1.04 "Bricolage Grotesque";letter-spacing:-.02em}
+.sl.cover .hd{font-size:12.4cqw}
+.bd{font-size:4.6cqw;line-height:1.4;margin-top:3.5cqw;opacity:.88;max-width:34ch}
+.sw2{display:inline-block;background:var(--sa);color:var(--sb);font-weight:800;font-size:4.2cqw;padding:2.6cqw 5.4cqw;border-radius:9cqw;margin-top:4cqw}
+.ft{display:flex;justify-content:space-between;font-size:3.4cqw;font-weight:700;opacity:.8;margin-right:14cqw}
+[data-th=sun]{--sb:#ffb703;--sx:#1b1400;--sa:#1b1400}
+[data-th=pine]{--sb:#0f4d3f;--sx:#f4fff9;--sa:#ffd166}
+[data-th=night]{--sb:#14173a;--sx:#fff;--sa:#ff6b9a}
+[data-th=blush]{--sb:#ffe0ec;--sx:#3a0d22;--sa:#e11d74}
+.nv{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:14px}
+.th{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:4px;justify-content:center}
+.th button{flex:0 0 auto;width:54px;height:68px;border-radius:10px;border:2px solid var(--line);cursor:pointer;font:800 15px "Bricolage Grotesque";background:var(--sb);color:var(--sx);transition:.2s}
+.th button.on{border-color:var(--acc);transform:translateY(-4px)}
+.ck label{display:flex;gap:9px;align-items:center;padding:6px 0;font-weight:600}
+.hint{font-size:12.5px;color:var(--mut);margin:8px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:40;max-width:90vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%)}
+/* workflow */
+.fl{padding:30px 0 60px}.fl h2{font-size:clamp(28px,4vw,42px);margin-bottom:8px}.fl .sub{color:var(--mut);max-width:62ch;margin:0 0 26px}
+.dg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative}
+.nd{border:1.5px solid var(--line);background:var(--surf);border-radius:20px;padding:16px;cursor:pointer;text-align:left;transition:.25s;position:relative}
+.nd:hover{transform:translateY(-4px)}
+.nd[aria-selected="true"]{border-color:var(--acc);box-shadow:0 16px 34px -22px var(--acc)}
+.nd i{font-style:normal;font-size:26px;display:block;margin-bottom:6px}.nd b{font:800 16px "Bricolage Grotesque";display:block}.nd small{color:var(--mut)}
+.nd:not(:nth-child(4n)):after{content:"→";position:absolute;right:-13px;top:50%;font-weight:800;color:var(--acc);z-index:2}
+.dt{margin-top:16px;background:var(--ink);color:var(--bg);border-radius:24px;padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:22px;animation:in .35s}
+.dt h3{font-size:26px;margin-bottom:8px}.dt p{margin:0 0 8px;opacity:.88}.dt code{display:block;background:rgba(127,127,127,.2);border-radius:12px;padding:12px;font-size:12.5px;white-space:pre-wrap}
+.dt .chips span{display:inline-block;background:var(--acc);color:#2a1400;font-weight:700;border-radius:99px;padding:3px 11px;margin:0 6px 6px 0;font-size:13px}
+.gd{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+@media(max-width:980px){.ws{grid-template-columns:1fr}.dg{grid-template-columns:repeat(2,1fr)}.nd:after{display:none!important}.dt,.gd{grid-template-columns:1fr}.nav{flex-wrap:wrap;height:auto;padding:10px 0}.logo{width:100%}}
+@media(prefers-reduced-motion:reduce){.sl,.pn,.dt{animation:none}}
+</style>
+</head>
+<body>
+<header><div class="w nav"><div class="logo"><i>✦</i>Carousel Studio</div><div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="studio">Studio</button><button role="tab" aria-selected="false" data-tab="flow">Automation workflow</button></div></div></header>
+
+<main>
+<section class="pn on" id="studio"><div class="w ws">
+<aside class="card"><h3>1. Tell us your idea</h3>
+<label class="f" for="idea">Write it in plain English</label>
+<textarea id="idea">Make a carousel about warning signs that a dog needs to see a vet, for new pet parents.</textarea>
+<label class="f">Platform</label><div class="seg" id="pf"><button aria-pressed="true" data-v="p">Instagram 4:5</button><button aria-pressed="false" data-v="s">LinkedIn 1:1</button></div>
+<label class="f">Tone</label><select id="tn"><option>Friendly and caring</option><option>Professional</option><option>Playful</option></select>
+<label class="f">Look</label><div class="sw" id="sw"></div>
+<button class="btn a" id="go" style="width:100%;margin-top:18px">Generate carousel</button>
+<ul class="pl" id="pl"></ul></aside>
+
+<div class="cv"><div class="st" id="st"></div>
+<div class="nv"><button class="btn g sm" id="pv">← Back</button><b id="ct"></b><button class="btn g sm" id="nx">Next →</button></div>
+<div class="th" id="th"></div><p class="hint" style="text-align:center">Click any text on the slide to edit it.</p></div>
+
+<aside><div class="card"><h3>2. Review and publish</h3><label class="f" for="cap">Caption (auto-written)</label><textarea id="cap" style="min-height:150px"></textarea>
+<div class="ck" style="margin-top:8px"><label><input type="checkbox" checked> Instagram</label><label><input type="checkbox" checked> LinkedIn</label></div>
+<button class="btn a" id="pub" style="width:100%;margin-top:12px">Approve and publish</button>
+<button class="btn g" id="ex" style="width:100%;margin-top:8px">Download PNGs</button>
+<p class="hint">Slides are generated live by Gemini. Edit anything, then download all slides as PNGs.</p></div></aside>
+</div></section>
+
+<section class="pn" id="flow"><div class="w fl"><h2>From a rough idea to a published carousel, automatically.</h2>
+<p class="sub">One n8n workflow connects every step. The founder only does two things: write the idea, and tap Approve.</p>
+<div class="dg" id="dg" role="tablist"></div><div class="dt" id="dt"></div>
+<div class="gd"><div class="card"><h3>Human in the loop</h3><p class="hint" style="font-size:14px">Nothing posts without approval. The founder gets a preview in Telegram with three buttons: Approve, Edit in Canva, Regenerate.</p></div><div class="card"><h3>Brand consistency</h3><p class="hint" style="font-size:14px">Fonts, colours and layouts live in locked Canva brand templates, so every carousel looks designed by the same person.</p></div><div class="card"><h3>Gets smarter</h3><p class="hint" style="font-size:14px">Weekly, engagement data from the log sheet is fed back to Claude so winning hooks and topics are repeated.</p></div></div></div></section>
+</main>
+<div class="toast" id="tt" role="status"></div>
+
+<script>
+function $(i){return document.getElementById(i)}
+function esc(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var SAMPLE=[{k:"cover",t:"5 signs your dog needs a vet today",b:"A quick guide for new pet parents"},{t:"Not eating for over a day",b:"One missed meal is fine. A full day without food or water needs a check-up."},{t:"Repeated vomiting or loose stools",b:"More than two episodes in a few hours can cause dehydration, especially in puppies."},{t:"Limping or crying when touched",b:"Sudden pain often points to an injury, joint trouble or something swallowed."},{t:"Fast or laboured breathing",b:"Breathing hard while resting is an emergency. Go to a vet straight away."},{t:"Unusual tiredness or hiding",b:"A sudden change in energy or mood is often the first sign something is wrong."},{k:"cta",t:"Not sure? Ask a vet.",b:"Find verified vets, 24x7 hospitals and ambulances near you.",c:"Find a vet on Practo for Animals"}];
+var CAP="Dogs can’t tell us when something is wrong, so we have to watch closely. 🐶 Swipe for 5 signs that mean it’s time to see a vet. Save this for later and share it with a fellow pet parent.\n\n#PetCare #DogHealth #NewPetParent #VetAdvice #PractoForAnimals";
+var TH=[["sun","#ffb703"],["pine","#0f4d3f"],["night","#14173a"],["blush","#ffb3cf"]];
+var S=SAMPLE.slice(),i=0,th="sun",fmt="p",busy=0;
+function toast(m){var t=$("tt");t.textContent=m;t.classList.add("on");clearTimeout(toast.k);toast.k=setTimeout(function(){t.classList.remove("on")},2600)}
+function show(){var s=S[i],n=S.length,h='<div class="sl '+(s.k||"")+(fmt==="s"?" sq":"")+'" data-th="'+th+'" id="sl"><div class="tp"><span>@practoforanimals</span><b>'+(i+1)+' / '+n+'</b></div><div>'+(s.k||!i?"":'<div class="nm">'+i+'</div>')+'<div class="hd" contenteditable="true" spellcheck="false" data-f="t">'+esc(s.t)+'</div><div class="bd" contenteditable="true" spellcheck="false" data-f="b">'+esc(s.b)+'</div>'+(s.c?'<span class="sw2">'+esc(s.c)+'</span>':'')+'</div><div class="ft"><span>'+(s.k==="cta"?"Share with a pet parent":"Swipe →")+'</span></div></div>';
+ $("st").innerHTML=h;$("ct").textContent=(i+1)+" / "+n;
+ $("th").innerHTML=S.map(function(_,j){return '<button class="'+(j===i?"on":"")+'" data-j="'+j+'" data-th="'+th+'" aria-label="Slide '+(j+1)+'">'+(j+1)+'</button>'}).join("")}
+$("st").addEventListener("input",function(e){var f=e.target.dataset.f;if(f)S[i][f]=e.target.textContent});
+$("th").addEventListener("click",function(e){var b=e.target.closest("[data-j]");if(b){i=+b.dataset.j;show()}});
+$("pv").onclick=function(){i=(i+S.length-1)%S.length;show()};$("nx").onclick=function(){i=(i+1)%S.length;show()};
+$("sw").innerHTML=TH.map(function(t){return '<button aria-pressed="'+(t[0]===th)+'" data-t="'+t[0]+'" style="background:'+t[1]+'" aria-label="'+t[0]+' theme"></button>'}).join("");
+$("sw").addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(!b)return;th=b.dataset.t;document.querySelectorAll("#sw button").forEach(function(x){x.setAttribute("aria-pressed",x===b)});show()});
+$("pf").addEventListener("click",function(e){var b=e.target.closest("[data-v]");if(!b)return;fmt=b.dataset.v;document.querySelectorAll("#pf button").forEach(function(x){x.setAttribute("aria-pressed",x===b)});show()});
+var ST=["Researching the topic","Structuring the story","Writing slide copy","Designing layouts","Ready for review"];
+function cap(s){s=s.trim();return s.charAt(0).toUpperCase()+s.slice(1)}
+function build(idea){var l=idea.toLowerCase();if(l.indexOf("dog")>-1&&l.indexOf("vet")>-1)return SAMPLE.map(function(s){return Object.assign({},s)});
+ var t=cap(idea.replace(/^(make|create|write)( me)?( a)?( carousel)?( (about|on))? ?/i,"")).slice(0,70)||"Your idea",ch=idea.split(/[.;\n]|, | and /).map(function(x){return x.trim()}).filter(function(x){return x.length>12}).slice(0,5);
+ return [{k:"cover",t:t,b:"Swipe to learn more"}].concat(ch.map(function(c){return {t:cap(c).slice(0,60),b:"Add a supporting fact or example here."}})).concat([{k:"cta",t:"Ready to start?",b:"Follow for more simple tips.",c:"Learn more"}])}
+$("go").onclick=function(){if(busy)return;var idea=$("idea").value.trim();if(idea.length<8)return toast("Write a few words about your idea first.");busy=1;$("go").disabled=true;
+ var pl=$("pl");pl.innerHTML=ST.map(function(s){return '<li><i></i>'+s+'</li>'}).join("");var li=pl.children;
+ function tick(k){for(var j=0;j<li.length;j++){li[j].className=j<k?"done":j===k?"run":"";li[j].firstChild.textContent=j<k?"✓":""}}
+ var n=0,iv;tick(0);iv=setInterval(function(){if(n<4)tick(++n)},1100);
+ fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idea:idea,tone:$("tn").value,platform:fmt==="s"?"LinkedIn":"Instagram"})})
+ .then(function(r){if(!r.ok)throw new Error("api "+r.status);return r.json()})
+ .then(function(d){var sl=d.slides||[];if(sl.length<3)throw new Error("bad");S=sl.map(function(x){return {k:x.type==="cover"?"cover":x.type==="cta"?"cta":"",t:x.headline||"",b:x.body||"",c:x.button||""}});S[0].k="cover";S[S.length-1].k="cta";$("cap").value=d.caption||"";tick(5);toast("Carousel ready. Click any text to edit.")})
+ .catch(function(){S=build(idea);$("cap").value=CAP;tick(5);toast("AI is unavailable here, so this is a basic draft.")})
+ .finally(function(){clearInterval(iv);i=0;show();busy=0;$("go").disabled=false})};
+$("pub").onclick=function(){toast("Approved. Sent to Buffer: Instagram 7:30 pm, LinkedIn 9:00 am.")};
+$("ex").onclick=async function(){if(!window.html2canvas)return toast("Export works in the downloaded file.");var keep=i;try{for(var j=0;j<S.length;j++){i=j;show();var c=await html2canvas($("sl"),{scale:2.5,backgroundColor:null}),a=document.createElement("a");a.download="slide-"+(j+1)+".png";a.href=c.toDataURL();a.click();await new Promise(function(r){setTimeout(r,250)})}toast("Slides downloaded.")}catch(e){toast("Export works in the downloaded file.")}i=keep;show()};
+/* workflow */
+var N=[["💬","1. Capture the idea","Telegram, form or this app","Founder sends one message or voice note. A Telegram bot or Google Form sends it to an n8n webhook.",["Telegram","Webhook","Whisper (voice)"],"POST /webhook/idea\n{ \"idea\": \"warning signs a dog needs a vet\", \"platform\": \"instagram\" }"],["🔎","2. Research and structure","Claude with web search","Claude researches the topic, checks facts, picks the best angle and builds a hook, 5 key points and a call to action.",["Claude Sonnet","Web search","Brand-voice prompt"],"System: You are the brand writer for Practo for Animals.\nReturn an outline with hook, points, sources."],["✍️","3. Write the copy","Claude, structured JSON","Claude writes slide-by-slide headlines and body copy under strict character limits, plus the caption and hashtags.",["Claude","JSON output","Length rules"],"{ \"slides\": [{\"type\":\"cover\",\"headline\":\"…\",\"body\":\"…\"}],\n  \"caption\":\"…\", \"hashtags\":[…] }"],["🎨","4. Visual direction","Claude and an image model","Claude chooses a theme, layout and image prompt per slide. An image model such as Gemini makes illustrations only if needed.",["Claude","Gemini images","Brand palette"],"{ \"theme\":\"sun\", \"layout\":\"number-left\",\n  \"image_prompt\":\"friendly golden retriever, flat style\" }"],["🧩","5. Render the design","Canva Autofill or Templated","The JSON fills a locked brand template, which gives an editable design and PNG or PDF files for every slide.",["Canva Brand Templates","Autofill API","Templated.io"],"HTTP Request → Canva Autofill\n→ returns edit_url + export_urls[]"],["✅","6. Founder review","Telegram preview and buttons","The founder gets the slides and caption with buttons: Approve, Edit in Canva, or Regenerate with a note.",["Telegram","Inline buttons","Wait node"],"n8n Wait node pauses until a button is pressed.\nEdit → opens edit_url, then resumes."],["🚀","7. One-click publish","Buffer or Meta and LinkedIn APIs","On Approve, images post to Instagram as a carousel and the PDF posts to LinkedIn at the best time.",["Buffer","Instagram Graph API","LinkedIn API"],"IF approved → Buffer: create post\nchannels: [instagram, linkedin]"],["📈","8. Log and learn","Google Sheets or Airtable","Every post is logged. Weekly, engagement numbers go back into the prompt so the best hooks are repeated.",["Google Sheets","Schedule trigger","Claude summary"],"Row: date, topic, hook, likes, saves, shares\nWeekly job → top 5 hooks → prompt memory"]],ni=0;
+$("dg").innerHTML=N.map(function(n,j){return '<button class="nd" role="tab" data-n="'+j+'" aria-selected="'+(j===0)+'"><i>'+n[0]+'</i><b>'+n[1]+'</b><small>'+n[2]+'</small></button>'}).join("");
+function nd(j){var n=N[j];document.querySelectorAll(".nd").forEach(function(b,k){b.setAttribute("aria-selected",k===j)});$("dt").innerHTML='<div><h3>'+n[1]+'</h3><p>'+n[3]+'</p><div class="chips" style="margin-top:12px">'+n[4].map(function(x){return '<span>'+x+'</span>'}).join("")+'</div></div><code>'+n[5]+'</code>'}
+$("dg").addEventListener("click",function(e){var b=e.target.closest("[data-n]");if(b)nd(+b.dataset.n)});
+document.querySelector(".tabs").addEventListener("click",function(e){var b=e.target.closest("[data-tab]");if(!b)return;document.querySelectorAll(".tabs button").forEach(function(x){x.setAttribute("aria-selected",x===b)});document.querySelectorAll(".pn").forEach(function(p){p.classList.toggle("on",p.id===b.dataset.tab)})});
+$("cap").value=CAP;show();nd(0);
+</script>
+</body>
+</html>
