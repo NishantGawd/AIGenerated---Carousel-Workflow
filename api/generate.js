@@ -1,6 +1,3 @@
-// Vercel serverless function: keeps your Gemini key on the server.
-// Set GEMINI_API_KEY in Vercel > Project > Settings > Environment Variables.
-// Tried in order. If one is overloaded, the next is used automatically.
 const MODELS = [process.env.GEMINI_MODEL, "gemini-3.7-flash", "gemini-flash-latest", "gemini-2.5-flash"].filter(Boolean);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -50,13 +47,15 @@ module.exports = async (req, res) => {
     generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.8 },
   });
 
+  const t0 = Date.now();
   let lastError = "Gemini is busy";
   for (const model of MODELS) {
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (Date.now() - t0 > 38000) break;
       try {
         const r = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body }
+          { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body, signal: AbortSignal.timeout(18000) }
         );
         const data = await r.json();
         if (r.ok) {
@@ -67,8 +66,8 @@ module.exports = async (req, res) => {
         }
         lastError = `${model}: ${data.error?.message || r.status}`;
         console.error("Gemini error", r.status, lastError);
-        if (r.status === 429 || r.status >= 500) { await sleep(900); continue; } // busy: retry once
-        break; // other errors (bad model name, bad key): try next model
+        if (r.status === 429 || r.status >= 500) { await sleep(900); continue; }
+        break;
       } catch (e) {
         lastError = `${model}: ${e.message}`;
         console.error("Request failed", lastError);
