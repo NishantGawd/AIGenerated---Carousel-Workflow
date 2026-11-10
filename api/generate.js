@@ -1,6 +1,8 @@
 // Vercel serverless function: keeps your Gemini key on the server.
 // Set GEMINI_API_KEY in Vercel > Project > Settings > Environment Variables.
-const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+// Tried in order. If one is overloaded, the next is used automatically.
+const MODELS = [process.env.GEMINI_MODEL, "gemini-3.7-flash", "gemini-flash-latest", "gemini-2.5-flash"].filter(Boolean);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SCHEMA = {
   type: "OBJECT",
@@ -41,25 +43,38 @@ module.exports = async (req, res) => {
   if (typeof idea !== "string" || idea.trim().length < 8 || idea.length > 800)
     return res.status(400).json({ error: "Idea must be 8 to 800 characters" });
 
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text:
-            `Idea: ${idea.trim()}\nPlatform: ${String(platform || "Instagram").slice(0, 20)}\nTone: ${String(tone || "Friendly").slice(0, 40)}` }] }],
-          generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.8 },
-        }),
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: "user", parts: [{ text:
+      `Idea: ${idea.trim()}\nPlatform: ${String(platform || "Instagram").slice(0, 20)}\nTone: ${String(tone || "Friendly").slice(0, 40)}` }] }],
+    generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.8 },
+  });
+
+  let lastError = "Gemini is busy";
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body }
+        );
+        const data = await r.json();
+        if (r.ok) {
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return res.status(200).json(JSON.parse(text));
+          lastError = "Empty response";
+          break;
+        }
+        lastError = `${model}: ${data.error?.message || r.status}`;
+        console.error("Gemini error", r.status, lastError);
+        if (r.status === 429 || r.status >= 500) { await sleep(900); continue; } // busy: retry once
+        break; // other errors (bad model name, bad key): try next model
+      } catch (e) {
+        lastError = `${model}: ${e.message}`;
+        console.error("Request failed", lastError);
+        break;
       }
-    );
-    const data = await r.json();
-    if (!r.ok) return res.status(502).json({ error: data.error?.message || "Gemini error" });
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return res.status(200).json(JSON.parse(text));
-  } catch (e) {
-    return res.status(500).json({ error: "Generation failed" });
+    }
   }
+  return res.status(502).json({ error: lastError });
 };
